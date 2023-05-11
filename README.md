@@ -1,5 +1,5 @@
 # PhotonOS: A Flexible Platform For Entangled Photon Experiments
-By Callum Welsh, based on the absolutely phenomenal work of Sergey Polyakov, Alan Migdall, and Sae Woo Nam at NIST; https://www.nist.gov/services-resources/software/simple-and-inexpensive-fpga-based-fast-multichannel-acquisition-board
+By Callum Welsh, based on the absolutely phenomenal work of [Sergey Polyakov, Alan Migdall, and Sae Woo Nam at NIST](https://www.nist.gov/services-resources/software/simple-and-inexpensive-fpga-based-fast-multichannel-acquisition-board). Developed for [Chin Lab at The University of Chicago](https://ultracold.uchicago.edu/)
 
 ## FPGA Data Readout straight to a Python GUI
 For me, at least, NI Labview is frustrating and unintuitive. This software is intended to provide a way to read out time tagged data from Single Photon Counting Modules to a Python GUI that is 1) easily reconfigurable to suit whatever needs a user wants and 2) puts all of the tools used for Quantum State Tomography in one place.
