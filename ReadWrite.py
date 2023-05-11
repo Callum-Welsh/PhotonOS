@@ -5,33 +5,77 @@
 
 import sys
 import subprocess
+import asyncio
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTextEdit
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 
 
-def open_c_program():
-    command = ["./your_c_program"]
+'''
+# Multi-Threaded Implementation of Non-Blocking Data Streaming. Too scary for me!
+class DataStreamingThread(QThread):
+    dataReceived = pyqtSignal(str)
 
-    try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1, universal_newlines=True)
-        return process
+    def run(self):
+        cmd = "./c_script"  # Replace with the actual C script command
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-    except Exception as e:
-        print(f"Error executing C program: {str(e)}")
-        return None
+        while True:
+            data = proc.stdout.readline().decode().strip()
+            if not data:
+                break
 
-def stream_c_program_output(process):
-    if process is None:
-        return
+            self.dataReceived.emit(data)
 
-    for line in process.stdout:
-        line = line.strip()
+        proc.wait()
+'''
+######## ASYNCHRONOUS FUNCTION FOR READING DATA FROM FPGA VIA C CODE ##################
+async def read_data(proc, text_edit):
+    while True:
+        data = await proc.stdout.readline()
+        if not data:
+            break
 
-        # Process the line as needed
-        # Example: Print the line to the console
-        print(line)
+        # Process the received data
+        text = data.decode().strip()
+        text_edit.append(f"Received data: {text}")
 
-    process.wait()  # Wait for the process to complete
+        # Perform other tasks concurrently
+        # ...
+########################################################################################
 
-# Open the C program
-c_program_process = open_c_program()
-    
+##################### QT5 GUI GRAPHICS AND FUNCTIONALITY #################################################
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.text_edit = QTextEdit(self)
+        self.setCentralWidget(self.text_edit)
+
+
+    # Define the async call to open the c program on launch
+    async def start_count_data_streaming(self):
+        cmd = "./c_script"  # Replace with the actual C script command
+        proc = await asyncio.create_subprocess_shell(cmd, stdout=subprocess.PIPE) #Opens the C program
+
+        await read_data(proc, self.text_edit)
+
+        await proc.wait()
+
+################################################################################################
+
+
+####### ACTUALLY RUN THE PROGRAM ###################
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    window = MainWindow() #LAUNCH THE GUI
+
+    # Create an asyncio event loop
+    loop = asyncio.get_event_loop()
+    loop.create_task(window.start_count_data_streaming())
+
+    window.show() #SHOW THE GUI
+
+    # Enter the asyncio event loop
+    loop.run_forever()
