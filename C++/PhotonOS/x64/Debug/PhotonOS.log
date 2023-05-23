@@ -1,0 +1,5 @@
+﻿PhotonOS.obj : error LNK2019: unresolved external symbol "public: bool __cdecl CCyUSBEndPoint::XferData(unsigned char *,long &,class CCyIsoPktInfo *)" (?XferData@CCyUSBEndPoint@@QEAA_NPEAEAEAJPEAVCCyIsoPktInfo@@@Z) referenced in function "int __cdecl FPGA_Counts(bool,unsigned char,char *,__int64 *,unsigned __int64 *,int *,int)" (?FPGA_Counts@@YAH_NEPEADPEA_JPEA_KPEAHH@Z)
+PhotonOS.obj : error LNK2019: unresolved external symbol "public: __cdecl CCyUSBDevice::CCyUSBDevice(void *,struct _GUID,int)" (??0CCyUSBDevice@@QEAA@PEAXU_GUID@@H@Z) referenced in function "int __cdecl USB_Open(void)" (?USB_Open@@YAHXZ)
+PhotonOS.obj : error LNK2019: unresolved external symbol "public: __cdecl CCyUSBDevice::~CCyUSBDevice(void)" (??1CCyUSBDevice@@QEAA@XZ) referenced in function "public: void * __cdecl CCyUSBDevice::`scalar deleting destructor'(unsigned int)" (??_GCCyUSBDevice@@QEAAPEAXI@Z)
+CyAPI.lib : warning LNK4272: library machine type 'x86' conflicts with target machine type 'x64'
+C:\Users\LabPC\Documents\GitHub\PhotonOS\C++\x64\Debug\PhotonOS.exe : fatal error LNK1120: 3 unresolved externals

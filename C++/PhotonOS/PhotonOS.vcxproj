@@ -152,7 +152,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30037\lib\x86\legacy_stdio_definitions.lib" />
     <Library Include="CyAPI.lib" />
     <Library Include="Stats.lib" />
   </ItemGroup>

@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#pragma comment (lib, "legacy_stdio_definitions.lib")
+
 
 #include <stdio.h>
 //#include "CyAPI.h"
@@ -589,14 +591,14 @@ stats structure: number of occurences of these events:
 
 
 void streamData() {
-	std::cout << "Pass 1!";
+	//std::cout << "Pass 1!";
     int USBstatus;
-	std::cout << "Pass 2!";
+	//std::cout << "Pass 2!";
 
 	bool saveClicks = false;  //you want to save time - tagged events to a file
-	std::cout << "Pass 3!";
+	//std::cout << "Pass 3!";
     unsigned char fpgaCommand = FPGA_ENABLE;  // Set the desired FPGA command
-	std::cout << "Pass 3!";
+	//std::cout << "Pass 3!";
     char* fileName;  // Specify the file name for saving time-tagged events
     __int64 stats[16];  // Array to store the coincidence statistics
     int runs = 100;  // Number of times to perform USB transfer before returning the stats
@@ -606,8 +608,8 @@ void streamData() {
 
 
     USBstatus = USB_Open();
-	std::cout << USBstatus;
-	std::cout << "Pass 4!";
+	//std::cout << USBstatus;
+	//std::cout << "Pass 4!";
     if (USBstatus != 0) {
 		std::cout << ("USB Protocol Failure");
     }
