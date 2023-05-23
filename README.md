@@ -7,7 +7,7 @@ For me, at least, NI Labview is frustrating and unintuitive. This software is in
 This work (for now) requires you to use a Xylo-EM dev board with an Altera Cyclone II FPGA.
 
 ## This project is under development. Immediate Development Goals:
-~~1. Establish a link between a Xylo-EM FPGA development board and a Python GUI that can readout data asynchronously and in real time.~~ Done!
+1. ~~Establish a link between a Xylo-EM FPGA development board and a Python GUI that can readout data asynchronously and in real time.~~ Done!
 2. Create a tool that lets us save data and run statistics on it during an experiment.
 3. Connect these tools to automated motorized waveplate controls
 4. Build a tool where you click "Tomography" and a rigorous, automated Quantum State Tomography meassurement is preformed.
