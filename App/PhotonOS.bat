@@ -1,0 +1,2 @@
+call C:\Users\LabPC\anaconda3\Scripts\activate.bat C:\Users\LabPC\anaconda3
+call C:\Users\LabPC\Documents\GitHub\PhotonOS\C++\Debug\PhotonOS.exe | python C:\Users\LabPC\Documents\GitHub\PhotonOS\Python\FrontEndBeta.py

@@ -10,12 +10,14 @@ y_data_counts1 = deque(maxlen=1000)  # Maximum number of data points to display 
 y_data_counts2 = deque(maxlen=1000)  # Maximum number of data points to display
 y_data_coin = deque(maxlen=1000)  # Maximum number of data points to display # Maximum number of data points to display
 
+counter = 0
+
 pg.setConfigOptions(antialias=True)
 
 class RealTimePlot(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.counter = 0
         self.setWindowTitle('Real-time Data Stream')
         self.setGeometry(100, 100, 800, 600)
 
@@ -53,21 +55,22 @@ class RealTimePlot(QMainWindow):
             numbers = line.split(',')
 
             # Convert the numbers to floats
-            data = [float(num) for num in numbers[0:-1]]
+            data = [float(num) for num in numbers[0:-2]]
 
             # Update the data lists
             if len(x_data_counts1) == 1000:
+                self.counter = self.counter + 1
                 x_data_counts1.popleft()
                 y_data_counts1.popleft()
                 y_data_counts2.popleft()
                 y_data_coin.popleft()
 
-            x_data_counts1.append(len(y_data_counts1))  # Assuming the time value is at index 0
-            y_data_counts1.append(data[1])  # Assuming the data value is at index 1
+            x_data_counts1.append(len(y_data_counts1) + self.counter)  # Assuming the time value is at index 0
+            y_data_counts1.append(data[2])  # Assuming the data value is at index 1
 
-            y_data_counts2.append(data[3])  # Assuming the data value is at index 1
+            y_data_counts2.append(data[4])  # Assuming the data value is at index 1
 
-            y_data_coin.append(data[6])  # Assuming the data value is at index 1
+            y_data_coin.append(data[9])  # Assuming the data value is at index 1
 
             # Update the plot
             self.counts1Curve.setData(list(x_data_counts1), list(y_data_counts1))
