@@ -311,9 +311,23 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 			}
 
 			if (delay) {
-				for (int j = 0; j < (size - incompletePacket); j += FPGAdataPointSize) {
-					std::cout << buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3];
+				int rows = (size - incompletePacket)/4;
+				int col = 32;
+				int** delayArr = new int* [rows];
+				for (int i = 0; i < rows; i++) {
+					delayArr[i] = new int[col];
 				}
+				for (int j = 0; j < (size - incompletePacket); j += FPGAdataPointSize) {
+					std::cout << std::hex << std::showbase << (buffer[j + 3] & 248) << '\n';
+					//std::cout <<  buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3];
+					//std::bitset< 32> binary(buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3]);
+					//std::cout << binary;
+					//delayArr[j / 4] = (int*)(binary.to_ulong());
+					//std::cout << oneLine;
+					//std::cout << '\n';
+				}
+				//std::cout << "First" << std::endl;
+				//std::cout << delayArr[1];
 			}
 
 			if (incompletePacket) {
