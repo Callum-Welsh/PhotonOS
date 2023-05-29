@@ -172,7 +172,7 @@ int USB_Close() {
 }
 
 // Pulls timestamped clicks from FPGA, and calculates user-defined statistics data (stats)
-int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, int runs) {
+int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, int runs, bool delay) {
 
 	//debugLog << "start" << std::endl;
 	//debugLog.flush(;)
@@ -310,6 +310,12 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 				//clickLog.flush();
 			}
 
+			if (delay) {
+				for (int j = 0; j < (size - incompletePacket); j += FPGAdataPointSize) {
+					std::cout << buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3];
+				}
+			}
+
 			if (incompletePacket) {
 				for (int k = 0; k < incompletePacket; k++) {
 					buffer[k] = buffer[size + k - incompletePacket]; //transfer the bits from the incomplete data packet to the beginning of the buffer
@@ -320,6 +326,7 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 		//stats
 		
 		REALTIME_FUNCTION(buffer, size, stats);
+		
 	}
 
 	//debugLog << "stop" << std::endl;
@@ -613,12 +620,12 @@ void streamData() {
     if (USBstatus != 0) {
 		std::cout << ("USB Protocol Failure");
     }
-    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs);
+    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 0);
 	//std::cout << result;
     fpgaCommand = FPGA_NO_CHANGE;
 
     while (true) {
-        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs);
+        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 1);
         if (result) {
             // Handle errors if needed
             // For example, print an error message
