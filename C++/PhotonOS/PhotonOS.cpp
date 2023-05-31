@@ -310,42 +310,42 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 				//clickLog.flush();
 			}
 
-			if (delay) {
-				std::cout << "Start!" << std::endl;
+			if (delay) { //Starts 'delay section'
+				//std::cout << "Start!" << std::endl; //debug feature; prints start
 
 				
-				std::bitset<32> timeDivide(0b11111111111111111111111111100000);
-				std::bitset<32> clickDivide(0b00000000000000000000000000011111);
-				std::vector<int> timeLog = {};
-				std::vector<std::bitset<5>> clickLog = {};
-				for (unsigned int a = 0; a < (size - incompletePacket); a = a + 4) {
-					std::bitset<sizeof(char)* CHAR_BIT> binary(buffer[a]);
+				std::bitset<32> timeDivide(0b11111111111111111111111111100000); // creates a binary mask that can be used to take only the 27 bit timestamp piece of the returned data
+				std::bitset<32> clickDivide(0b00000000000000000000000000011111); // creates a binary mask that can be used to take only the 5 bit click piece of the returned data
+				std::vector<int> timeLog = {}; //creates an empty array to keep the timestampls
+				std::vector<std::bitset<5>> clickLog = {}; // creates an empty array to keep the clicks
+				for (unsigned int a = 0; a < (size - incompletePacket); a = a + 4) { //starts a loop to run through and decode the buffer; each 4 bytes of buffer data represent 1 event
+					std::bitset<sizeof(char)* CHAR_BIT> binary(buffer[a]); //decodes the first byte into binary
 					int bin1;
-					bin1 = (int)(binary.to_ulong());
-					std::bitset<sizeof(char)* CHAR_BIT> binary2(buffer[a+1]);
+					bin1 = (int)(binary.to_ulong()); // turns it into int
+					std::bitset<sizeof(char)* CHAR_BIT> binary2(buffer[a+1]); //decodes second byte into binary
 					int bin2;
-					bin2 = (int)(binary2.to_ulong());
-					std::bitset<sizeof(char)* CHAR_BIT> binary3(buffer[a + 2]);
+					bin2 = (int)(binary2.to_ulong()); //turns it into int
+					std::bitset<sizeof(char)* CHAR_BIT> binary3(buffer[a + 2]); //decodes third byte into binary
 					int bin3;
-					bin3 = (int)(binary3.to_ulong());
-					std::bitset<sizeof(char)* CHAR_BIT> binary4(buffer[a + 3]);
+					bin3 = (int)(binary3.to_ulong()); // turns it into int
+					std::bitset<sizeof(char)* CHAR_BIT> binary4(buffer[a + 3]); //decodes fourth byte into binary
 					int bin4;
-					bin4 = (int)(binary4.to_ulong());
+					bin4 = (int)(binary4.to_ulong()); // turns it into int
 					uint32_t result = 0;
-					result += (bin4 << 0);
+					result += (bin4 << 0); //combines the four ints into one number 32 bit number that preserves the binary structure
 					result += (bin3 << 8);
 					result += (bin2 << 16);
 					result += (bin1 << 24);
 					//std::cout << binary<<binary2<<binary3<<binary4 << std::endl;
 					//std::cout << std::bitset<32>(result) << std::endl;
-					std::bitset<32> timeStampAndClicks(result);
-					std::bitset<27> timeStamp((timeStampAndClicks& timeDivide).to_ulong());
-					std::bitset<5> clicks((timeStampAndClicks& clickDivide).to_ulong());
+					std::bitset<32> timeStampAndClicks(result); // re-encodes the result into binary
+					std::bitset<27> timeStamp((timeStampAndClicks& timeDivide).to_ulong()); //takes the timestamp piece
+					std::bitset<5> clicks((timeStampAndClicks& clickDivide).to_ulong()); //takes the event code piece
 
 					//std::cout << timeStamp << std::endl;
 					//std::cout << clicks << std::endl;
-					timeLog.emplace_back(timeStamp.to_ulong());
-					clickLog.emplace_back(clicks);
+					timeLog.emplace_back(timeStamp.to_ulong()); //adds the timestamp to the timeLog array
+					clickLog.emplace_back(clicks); //adds the clicks to the click Log array.
 				}
 		//********* DEBUGGING UTILITIES **********************
 				//std::cout << "There are " << bufferSize / sizeof(buffer[0]) << " elements in the buffer" << std::endl;
