@@ -17,7 +17,7 @@
 #include <time.h>
 #include <bitset>
 #include <stdio.h>
-
+#include <vector>
 #include "CyAPI.h"
 
 //NOTE: CyAPI.h requires linking to Setupapi.lib
@@ -172,7 +172,7 @@ int USB_Close() {
 }
 
 // Pulls timestamped clicks from FPGA, and calculates user-defined statistics data (stats)
-int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, int runs, bool delay) {
+int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, int runs, bool delay, int delayFrames) {
 
 	//debugLog << "start" << std::endl;
 	//debugLog.flush(;)
@@ -311,23 +311,51 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 			}
 
 			if (delay) {
-				int rows = (size - incompletePacket)/4;
-				int col = 32;
-				int** delayArr = new int* [rows];
-				for (int i = 0; i < rows; i++) {
-					delayArr[i] = new int[col];
+				std::cout << "Start!" << std::endl;
+
+				
+				std::bitset<32> timeDivide(0b11111111111111111111111111100000);
+				std::bitset<32> clickDivide(0b00000000000000000000000000011111);
+				std::vector<int> timeLog = {};
+				std::vector<std::bitset<5>> clickLog = {};
+				for (unsigned int a = 0; a < (size - incompletePacket); a = a + 4) {
+					std::bitset<sizeof(char)* CHAR_BIT> binary(buffer[a]);
+					int bin1;
+					bin1 = (int)(binary.to_ulong());
+					std::bitset<sizeof(char)* CHAR_BIT> binary2(buffer[a+1]);
+					int bin2;
+					bin2 = (int)(binary2.to_ulong());
+					std::bitset<sizeof(char)* CHAR_BIT> binary3(buffer[a + 2]);
+					int bin3;
+					bin3 = (int)(binary3.to_ulong());
+					std::bitset<sizeof(char)* CHAR_BIT> binary4(buffer[a + 3]);
+					int bin4;
+					bin4 = (int)(binary4.to_ulong());
+					uint32_t result = 0;
+					result += (bin4 << 0);
+					result += (bin3 << 8);
+					result += (bin2 << 16);
+					result += (bin1 << 24);
+					//std::cout << binary<<binary2<<binary3<<binary4 << std::endl;
+					//std::cout << std::bitset<32>(result) << std::endl;
+					std::bitset<32> timeStampAndClicks(result);
+					std::bitset<27> timeStamp((timeStampAndClicks& timeDivide).to_ulong());
+					std::bitset<5> clicks((timeStampAndClicks& clickDivide).to_ulong());
+
+					//std::cout << timeStamp << std::endl;
+					//std::cout << clicks << std::endl;
+					timeLog.emplace_back(timeStamp.to_ulong());
+					clickLog.emplace_back(clicks);
 				}
-				for (int j = 0; j < (size - incompletePacket); j += FPGAdataPointSize) {
-					std::cout << std::hex << std::showbase << (buffer[j + 3] & 248) << '\n';
-					//std::cout <<  buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3];
-					//std::bitset< 32> binary(buffer[j] << buffer[j + 1] << buffer[j + 2] << buffer[j + 3]);
-					//std::cout << binary;
-					//delayArr[j / 4] = (int*)(binary.to_ulong());
-					//std::cout << oneLine;
-					//std::cout << '\n';
-				}
-				//std::cout << "First" << std::endl;
-				//std::cout << delayArr[1];
+		//********* DEBUGGING UTILITIES **********************
+				//std::cout << "There are " << bufferSize / sizeof(buffer[0]) << " elements in the buffer" << std::endl;
+				//for (std::vector<int>::const_iterator i = timeLog.begin(); i != timeLog.end(); ++i)
+				//	std::cout << *i << '\n';
+				//for (std::vector<std::bitset<5>>::const_iterator i = clickLog.begin(); i != clickLog.end(); ++i)
+				//	std::cout << *i << '\n';
+				//std::cout << "Done!" << std::endl;
+//*******************************************************************************
+				
 			}
 
 			if (incompletePacket) {
@@ -634,12 +662,12 @@ void streamData() {
     if (USBstatus != 0) {
 		std::cout << ("USB Protocol Failure");
     }
-    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 0);
+    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 0, 1);
 	//std::cout << result;
     fpgaCommand = FPGA_NO_CHANGE;
 
     while (true) {
-        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 1);
+        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 1, 1);
         if (result) {
             // Handle errors if needed
             // For example, print an error message
