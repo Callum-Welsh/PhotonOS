@@ -71,6 +71,99 @@ void correlate(unsigned char* data, int length, __int64* stats)
 	return;
 }
 
+std::pair<std::vector<int>, std::vector<int>> findEqualElements(const std::vector<int>& vec1, const std::vector<int>& vec2) {
+    std::unordered_map<int, std::vector<int>> map;
+    int size = vec1.size();
+  
+    for (int i = 0; i < size; ++i) {
+        map[vec1[i]].push_back(i);  // Store the indices of each element from vec1
+    }
+  
+    std::vector<int> indicesVec1;
+    std::vector<int> indicesVec2;
+  
+    for (int i = 0; i < size; ++i) {
+        if (map.count(vec2[i]) > 0) {
+            const std::vector<int>& indices = map[vec2[i]];
+            for (int index : indices) {
+                indicesVec1.push_back(index);
+                indicesVec2.push_back(i);
+            }
+        }
+    }
+  
+    return std::make_pair(indicesVec1, indicesVec2);
+}
+  
+  
+
+
+void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> clicks, _int64* statsDelay, int delay, std::vector<int> OldLateTimes, std::vector<5> OldLateClicks)
+{
+	std::vector<int> delayTimes = OldLateTimes;
+	std::vector<int> earlyTimes = newTimes;
+	std::vector<int> timeDelay = newTimes;
+	for(int& d : timeDelay){
+  		d += 1*delay;
+	}
+	delayTimes.insert(std::end(delayTimes), std::begin(timeDelay), std::end(timeDelay));
+
+	int vecSize = newTimes.size();
+	int fullSize = delayTimes.size();
+	int delta = fullSize - vecSize;
+	std::vector<std::bitset<5>>LateClicks = {};
+	std::vector<std::bitset<5>>EarlyClicks = {};
+
+	for (i = 0; i < delta; i +=1){
+		earlyTimes.emplace(0);
+		EarlyClicks.emplace(0b00000);
+	}
+
+	LateClicks.insert(std::end(LateClicks), std::begin(OldLateClicks), std::end(OldLateClicks));	
+	std::bitset<5> LateClickMask(0b00001);
+
+	std::bitset<5> EarlyClickMask(0b1110);
+
+
+	for(int i = 0; i < vecSize; i+=1){
+		LateClicks.emplace_back(clicks[i]& LateClickMask);
+		EarlyClicks.emplace_back(clicks[i]& EarlyClickMask);
+	}
+
+	std::pair<std::vector<int>, std::vector<int>> indices = findEqualElements(delayTimes, earlyTimes);
+
+	int numEqualElements = indices.first.size();
+
+	for(int j = 0; j < numEqualElements; j+= 1){
+		if (LateClicks[indices.first[j]] != 0b00000){
+			statsDelay[1] += 1
+		}
+		if (EarlyClicks[indices.second[j]] != 0b00000){
+			statsDelay[5] += 1
+		}
+		if (LateClicks[indices.first[j]] != 0b00000 && EarlyClicks[indices.second[j]] != 0b00000){
+			statsDelay[8] += 1
+		}
+	}
+	int lastEarly;
+	if (!newTimes.empty()){
+   		lastEarly = earlyTimes.back();
+	}
+	else{
+		lastEarly = 0;
+	}
+	OldLateTimes = {};
+	OldLateClicks = {};
+	for(int i = 0; i < fullSize; i+=1){
+		if (delayTimes[i] >= lastEarly){
+			OldLateTimes.emplace_back(delayTimes[i]);
+			OldLateClicks.emplace_back(LateClicks[i]);
+		}
+	}
+
+	return;
+}
+
 //FPGA commands
 static unsigned char FPGA_NO_CHANGE = 0;
 static unsigned char FPGA_CLEAR = 1;
@@ -650,6 +743,10 @@ void streamData() {
 	//std::cout << "Pass 3!";
     char* fileName;  // Specify the file name for saving time-tagged events
     __int64 stats[16];  // Array to store the coincidence statistics
+	__int64 delayedStats[16];
+	std::vec<int> timeBuff = {};
+	std::vec<std::bitset<1>> clickBuff = {};
+
     int runs = 100;  // Number of times to perform USB transfer before returning the stats
 
 	char hello[] = "clickLog.txt";
