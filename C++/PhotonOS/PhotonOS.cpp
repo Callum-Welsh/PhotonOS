@@ -22,6 +22,7 @@
 
 //NOTE: CyAPI.h requires linking to Setupapi.lib
 #define REALTIME_FUNCTION correlate
+#define REALTIME_FUNCTION_2 correlateDelayed
 
 void correlate(unsigned char* data, int length, __int64* stats)
 {
@@ -100,41 +101,46 @@ std::pair<std::vector<int>, std::vector<int>> findEqualElements(const std::vecto
 
 void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> clicks, _int64* statsDelay, int delay, std::vector<int> OldLateTimes, std::vector<5> OldLateClicks)
 {
-	std::vector<int> delayTimes = OldLateTimes;
-	std::vector<int> earlyTimes = newTimes;
-	std::vector<int> timeDelay = newTimes;
-	for(int& d : timeDelay){
-  		d += 1*delay;
-	}
-	delayTimes.insert(std::end(delayTimes), std::begin(timeDelay), std::end(timeDelay));
+	//IMPORTANT: USES A DELAY BUFFER CALLED OldLateTimes and OldLateClicks to store delayed timestamp data that cannot have a counterpart in the undelayed data (as it hasn't been pulled off the board yet)
 
-	int vecSize = newTimes.size();
-	int fullSize = delayTimes.size();
-	int delta = fullSize - vecSize;
-	std::vector<std::bitset<5>>LateClicks = {};
-	std::vector<std::bitset<5>>EarlyClicks = {};
+	std::vector<int> delayTimes = OldLateTimes; //Makes a new vector that adds the current delay buffer to the front of it
+	std::vector<int> earlyTimes = newTimes; //Makes a new vector composed of the times from the last pull from FPGA
+	std::vector<int> timeDelay = newTimes; //Makes a copy of the above
+	for(int& d : timeDelay){
+  		d += 1*delay; //takes one of the times pulled from the FPGA and adds (N = delay) delay frames
+	}
+	delayTimes.insert(std::end(delayTimes), std::begin(timeDelay), std::end(timeDelay)); //Adds this new delayed vector to the old delay buffer
+
+	int vecSize = newTimes.size(); //How many clicks did we just pull off the board?
+	int fullSize = delayTimes.size(); // How many of : Clicks pulled off the board + clicks from delay buffer
+	int delta = fullSize - vecSize; // Difference between number of clicks we just pulled and total number of clicks
+	std::vector<std::bitset<5>>LateClicks = OldLateClicks; //Creates 5 bit vector for late clicks, including the buffer
+	std::vector<std::bitset<5>>EarlyClicks = {}; //Creates 5 bit vector for early clicks
 
 	for (i = 0; i < delta; i +=1){
-		earlyTimes.emplace(0);
+		earlyTimes.emplace(0);			// We want Early and Late to be the same size for easy iteration; late is currently delta longer than early; adds delta elements to the front of Early to size(Late) = size(Early)
 		EarlyClicks.emplace(0b00000);
 	}
 
-	LateClicks.insert(std::end(LateClicks), std::begin(OldLateClicks), std::end(OldLateClicks));	
-	std::bitset<5> LateClickMask(0b00001);
+	//LateClicks.insert(std::end(LateClicks), std::begin(OldLateClicks), std::end(OldLateClicks)); 
 
-	std::bitset<5> EarlyClickMask(0b1110);
+
+	std::bitset<5> LateClickMask(0b00001); //Creates a binary mask that looks for clicks on late channel
+
+	std::bitset<5> EarlyClickMask(0b1110); //Creates a binary mask that looks for clicks on early channel
 
 
 	for(int i = 0; i < vecSize; i+=1){
-		LateClicks.emplace_back(clicks[i]& LateClickMask);
-		EarlyClicks.emplace_back(clicks[i]& EarlyClickMask);
+		LateClicks.emplace_back(clicks[i]& LateClickMask); //Add late clicks to late channel
+		EarlyClicks.emplace_back(clicks[i]& EarlyClickMask); //Add early clicks to early channel
+		//Note that at the end of this loop, EarlyClicks and LateClicks should still be the same size
 	}
 
-	std::pair<std::vector<int>, std::vector<int>> indices = findEqualElements(delayTimes, earlyTimes);
+	std::pair<std::vector<int>, std::vector<int>> indices = findEqualElements(delayTimes, earlyTimes); //Finds what pair of indices describes equal elements
 
-	int numEqualElements = indices.first.size();
+	int numEqualElements = indices.first.size(); //how many equal timestamps are there?
 
-	for(int j = 0; j < numEqualElements; j+= 1){
+	for(int j = 0; j < numEqualElements; j+= 1){ //Checks statistics on each channel
 		if (LateClicks[indices.first[j]] != 0b00000){
 			statsDelay[1] += 1
 		}
@@ -145,6 +151,9 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 			statsDelay[8] += 1
 		}
 	}
+
+	//Now all we have to do is put the clicks that were delayed past the end of Early into a buffer for the next round!
+
 	int lastEarly;
 	if (!newTimes.empty()){
    		lastEarly = earlyTimes.back();
@@ -265,7 +274,7 @@ int USB_Close() {
 }
 
 // Pulls timestamped clicks from FPGA, and calculates user-defined statistics data (stats)
-int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, int runs, bool delay, int delayFrames) {
+int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __int64* stats, __int64* delayedStats, int runs, bool delay, int delayFrames, std::vector<int> timeBuff, std::vector<std::bitset<5>> clickBuff) {
 
 	//debugLog << "start" << std::endl;
 	//debugLog.flush(;)
@@ -439,6 +448,8 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 					//std::cout << clicks << std::endl;
 					timeLog.emplace_back(timeStamp.to_ulong()); //adds the timestamp to the timeLog array
 					clickLog.emplace_back(clicks); //adds the clicks to the click Log array.
+
+					REALTIME_FUNCTION_2(timeLog, clickLog, delayedStats, delay, timeBuff, clickBuff)
 				}
 		//********* DEBUGGING UTILITIES **********************
 				//std::cout << "There are " << bufferSize / sizeof(buffer[0]) << " elements in the buffer" << std::endl;
@@ -461,6 +472,7 @@ int FPGA_TimeTag(bool saveClicks, unsigned char  fpgaCommand, char* fileName, __
 		//stats
 		
 		REALTIME_FUNCTION(buffer, size, stats);
+
 		
 	}
 
@@ -745,7 +757,7 @@ void streamData() {
     __int64 stats[16];  // Array to store the coincidence statistics
 	__int64 delayedStats[16];
 	std::vec<int> timeBuff = {};
-	std::vec<std::bitset<1>> clickBuff = {};
+	std::vec<std::bitset<5>> clickBuff = {};
 
     int runs = 100;  // Number of times to perform USB transfer before returning the stats
 
@@ -759,12 +771,12 @@ void streamData() {
     if (USBstatus != 0) {
 		std::cout << ("USB Protocol Failure");
     }
-    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 0, 1);
+    int result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, delayedStats, runs, 0, 1, timeBuff, clickBuff);
 	//std::cout << result;
     fpgaCommand = FPGA_NO_CHANGE;
 
     while (true) {
-        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, runs, 1, 1);
+        result = FPGA_TimeTag(saveClicks, fpgaCommand, fileName, stats, delayedStats, runs, 1, 1, timeBuff, clickBuff);
         if (result) {
             // Handle errors if needed
             // For example, print an error message
