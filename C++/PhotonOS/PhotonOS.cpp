@@ -133,20 +133,23 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 	for(int i = 0; i < vecSize; i+=1){
 		LateClicks.emplace_back(clicks[i]& LateClickMask); //Add late clicks to late channel
 		EarlyClicks.emplace_back(clicks[i]& EarlyClickMask); //Add early clicks to early channel
+
+		if (LateClicks[i] != 0b00000){
+			statsDelay[1] += 1
+		}
+		if (EarlyClicks[i] != 0b00000){
+			statsDelay[5] += 1
+		}
+		
 		//Note that at the end of this loop, EarlyClicks and LateClicks should still be the same size
 	}
+
 
 	std::pair<std::vector<int>, std::vector<int>> indices = findEqualElements(delayTimes, earlyTimes); //Finds what pair of indices describes equal elements
 
 	int numEqualElements = indices.first.size(); //how many equal timestamps are there?
 
 	for(int j = 0; j < numEqualElements; j+= 1){ //Checks statistics on each channel
-		if (LateClicks[indices.first[j]] != 0b00000){
-			statsDelay[1] += 1
-		}
-		if (EarlyClicks[indices.second[j]] != 0b00000){
-			statsDelay[5] += 1
-		}
 		if (LateClicks[indices.first[j]] != 0b00000 && EarlyClicks[indices.second[j]] != 0b00000){
 			statsDelay[8] += 1
 		}
