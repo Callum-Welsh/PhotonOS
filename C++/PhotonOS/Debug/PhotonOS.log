@@ -1,4 +1,1 @@
-﻿  PhotonOS.cpp
-C:\Users\LabPC\Documents\GitHub\PhotonOS\C++\PhotonOS\PhotonOS.cpp(321,32): warning C4018: '<': signed/unsigned mismatch
-LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
-  PhotonOS.vcxproj -> C:\Users\LabPC\Documents\GitHub\PhotonOS\C++\Debug\PhotonOS.exe
+﻿  PhotonOS.vcxproj -> C:\Users\LabPC\Documents\GitHub\PhotonOS\C++\Debug\PhotonOS.exe
