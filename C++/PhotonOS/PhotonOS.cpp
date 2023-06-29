@@ -25,6 +25,7 @@
 #define REALTIME_FUNCTION correlate
 #define REALTIME_FUNCTION_2 correlateDelayed
 
+//THIS IS THE *ORIGINAL* CORRELATE FUNCTION FROM THE NIST CODE; NO DELAY BUFFER
 void correlate(unsigned char* data, int length, __int64* stats)
 {
 	int i;
@@ -72,7 +73,9 @@ void correlate(unsigned char* data, int length, __int64* stats)
 	}
 	return;
 }
+// END ORIGINAL CORRELATE FUNCTION
 
+//THIS IS A FUNCTION THAT *SHOULD* TAKE TWO VECTORS, AND CHECK WHAT THE INDICES OF ELEMENTS WHERE THEY ARE EQUAL ARE; IE (1,2,3) AND (4, 1, 5) WOULD RETURN (0, 1). APPEARS TO BE A BIT BROKEN WHEN THE DELAY IS TURNED OUT
 std::pair<std::vector<int>, std::vector<int>> findEqualElements(const std::vector<int>& vec1, const std::vector<int>& vec2) {
     std::unordered_map<int, std::vector<int>> map;
     int size = vec1.size();
@@ -93,17 +96,21 @@ std::pair<std::vector<int>, std::vector<int>> findEqualElements(const std::vecto
             }
         }
     }
-  
+
     return std::make_pair(indicesVec1, indicesVec2);
 }
+//END INDEX MATCHING FUNCTION
 
+//THIS IS A FUNCTION TO TAKE AN UNSINGED CHAR AND FLIP IT; VERY USEFUL FOR CHANGING THE "ENDIENESS" OF OUR DATA, AS CAN BE SEEN BELOW
 unsigned char reverse(unsigned char b) {
 	b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
 	b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
 	b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
 	return b;
 }
-  
+//END FLIPPING FUNCTION
+
+//FUNCTION TO REVERSE AN ENTIRE 32 BIT NUMBER; ALSO USEFUL FOR CHANGING ENDIENESS.
 int N = 32;
 template<std::size_t N>
 void reverseBit(std::bitset<N>& b) {
@@ -114,7 +121,10 @@ void reverseBit(std::bitset<N>& b) {
 	}
 
 }
+//END FLIPPING FUNCTION
 
+
+//REMOVE DUPLICATES FROM A VECTOR; JUST IN CASE A TIMESTAMP IS REPEATED, WE CAN ERASE IT. SHOULDN'T HAPPEN, BUT I WROTE THIS JUST IN CASE.
 void removeDupes(std::vector<int>& v)
 {
 	auto end = v.end();
@@ -124,9 +134,9 @@ void removeDupes(std::vector<int>& v)
 
 	v.erase(end, v.end());
 }
-  
+//END REMOVE DUPLICATE FUNCTION
 
-
+//NEW CORRELATION FUNCTION
 void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> clicks, __int64* statsDelay, int delay, std::vector<int> OldLateTimes, std::vector<std::bitset<5>> OldLateClicks)
 {
 	//IMPORTANT: USES A DELAY BUFFER CALLED OldLateTimes and OldLateClicks to store delayed timestamp data that cannot have a counterpart in the undelayed data (as it hasn't been pulled off the board yet)
@@ -147,7 +157,7 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 	int fullSize = delayTimes.size(); // How many of : Clicks pulled off the board + clicks from delay buffer
 	int delta = fullSize - vecSize; // Difference between number of clicks we just pulled and total number of clicks
 
-	std::vector<std::bitset<5>>LateClicks = OldLateClicks; //Creates 5 bit vector for late clicks, including the buffer
+	std::vector<std::bitset<5>>LateClicks = OldLateClicks; //Creates 5 bit vector for late clicks, including the buffer; DEFINITELY WORTH MAKING SURE THIS BEHAVES AS EXPECTED; I think we migth need to access the elements *inside* old late clicks?
 	std::vector<std::bitset<5>>EarlyClicks = {}; //Creates 5 bit vector for early clicks
 
 	for (int i = 0; i < delta; i += 1) {
@@ -155,7 +165,7 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 		EarlyClicks.emplace_back(0b00000);
 	}
 
-	earlyTimes.insert(std::end(earlyTimes), std::begin(newTimes), std::end(newTimes));
+	earlyTimes.insert(std::end(earlyTimes), std::begin(newTimes), std::end(newTimes)); //stick the new times onto the back of the old times from the buffer to make our complete time bufffer.
 
 
 	
@@ -167,9 +177,10 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 
 	std::bitset<5> EarlyClickMask(0b00010); //Creates a binary mask that looks for clicks on early channel
 
-	for (int i = 0; i < vecSize; i += 1) {
+	//DEBUG UTILITY
+	//for (int i = 0; i < vecSize; i += 1) {
 		//std::cout << clicks[i] << std::endl;
-	}
+	//}
 
 	for (int i = 0; i < vecSize; i += 1) {
 		LateClicks.emplace_back(clicks[i] & LateClickMask); //Add late clicks to late channel
@@ -180,17 +191,16 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 
 	for (int i = 0; i < fullSize; i+=1) {
 		if (LateClicks[i] == 0b01000) {
-			statsDelay[1] += 1;
-			if (EarlyClicks[i] == 0b00010) {
+			statsDelay[1] += 1; //check if count on Late Channel; if yes, add one to stats array
+			if (EarlyClicks[i] == 0b00010) { //if also click on early channel, add a coincidnece
 				//statsDelay[3] += 1;
 				//std::cout << "Timestamp at" << delayTimes[i] << std::endl;
 			}
 		}
-		if (EarlyClicks[i] == 0b00010) {
-			statsDelay[2] += 1;
+		if (EarlyClicks[i] == 0b00010) { //seperate routine for counting singles on early channel just for safety.
+			statsDelay[2] += 1; //
 		}
 	}
-
 
 /*
 	std::pair<std::vector<int>, std::vector<int>> indices = findEqualElements(delayTimes, earlyTimes); //Finds what pair of indices describes equal elements
@@ -223,22 +233,24 @@ void correlateDelayed(std::vector<int> newTimes, std::vector<std::bitset<5>> cli
 
 	int lastEarly;
 	if (!newTimes.empty()){
-   		lastEarly = earlyTimes.back();
+   		lastEarly = earlyTimes.back(); //what was the last timestamp in the early channel? By definition, this is the last timestamp for which the computer has recieved data from the board, so nothing with a later timestamp from the delayed channel can be correlated yet!
 	}
 	else{
-		lastEarly = 0;
+		lastEarly = 0; //if empty, just set it to zero; *every timestamp in old is uncorrelated.
 	}
 	OldLateTimes = {};
 	OldLateClicks = {};
-	for(int i = 0; i < fullSize; i+=1){
-		if (delayTimes[i] >= lastEarly){
-			OldLateTimes.emplace_back(delayTimes[i]);
-			OldLateClicks.emplace_back(LateClicks[i]);
+	for(int i = 0; i < fullSize; i+=1){ //scans through the entire clicks/timestamps arrays
+		if (delayTimes[i] >= lastEarly){ //If your timestamp in late is later than the last early timestamp...
+			OldLateTimes.emplace_back(delayTimes[i]); //... then you go into the buffer!
+			OldLateClicks.emplace_back(LateClicks[i]);//... and so do your clicks!
 		}
 	}
 
 	return;
 }
+
+//End new correlation function!
 
 //FPGA commands
 static unsigned char FPGA_NO_CHANGE = 0;
